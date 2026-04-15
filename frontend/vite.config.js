@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'target: "https://ai-career-backend-k3ql.onrender.com"',
         changeOrigin: true
       }
     },

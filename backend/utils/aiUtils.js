@@ -34,7 +34,7 @@ const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assis
           headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'http://localhost:5173',
+            'HTTP-Referer': 'https://ai-career-backend-k3ql.onrender.com',
             'X-Title': 'AI Career System'
           },
           timeout: 60000 // 60 seconds timeout
