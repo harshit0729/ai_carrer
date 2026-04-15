@@ -7,7 +7,8 @@ import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import './index.css'
 
-axios.defaults.baseURL = process.env.VITE_API_URL || 'https://ai-career-backend-k3ql.onrender.com'
+const API_URL = 'https://ai-career-backend-k3ql.onrender.com'
+axios.defaults.baseURL = API_URL
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
