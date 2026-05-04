@@ -1,6 +1,53 @@
 const axios = require('axios');
 
-const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assistant.') => {
+const extractJSON = (response) => {
+  if (!response || typeof response !== 'string') {
+    return null;
+  }
+
+  let cleaned = response.trim();
+  cleaned = cleaned.replace(/^```json\s*/g, '').replace(/```$/g, '');
+  cleaned = cleaned.replace(/^```\s*/g, '').replace(/```$/g, '');
+
+  try {
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    }
+    return JSON.parse(cleaned);
+  } catch (e) {
+    try {
+      const lines = cleaned.split('\n');
+      let jsonLines = [];
+      let inJson = false;
+      let braceCount = 0;
+      
+      for (const line of lines) {
+        if (line.includes('{') && !inJson) {
+          inJson = true;
+        }
+        if (inJson) {
+          jsonLines.push(line);
+          braceCount += (line.match(/\{/g) || []).length;
+          braceCount -= (line.match(/\}/g) || []).length;
+          if (braceCount === 0 && jsonLines.length > 0) {
+            break;
+          }
+        }
+      }
+      
+      if (jsonLines.length > 0) {
+        const joined = jsonLines.join('\n').replace(/}[\s\S]*$/, '}');
+        return JSON.parse(joined);
+      }
+    } catch (e2) {
+      return null;
+    }
+  }
+  return null;
+};
+
+const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assistant.', returnJSON = false) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
@@ -47,7 +94,19 @@ const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assis
         throw new Error('Empty response from AI');
       }
       
-      return response.data.choices[0].message.content;
+      const content = response.data.choices[0].message.content;
+
+      if (returnJSON) {
+        const parsed = extractJSON(content);
+        if (!parsed) {
+          console.log(`Model ${model} returned non-JSON response, trying next model...`);
+          lastError = new Error('Invalid JSON from model');
+          continue;
+        }
+        return parsed;
+      }
+
+      return content;
     } catch (error) {
       console.log(`Model ${model} failed:`, error.message);
       lastError = error;
@@ -69,4 +128,4 @@ const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assis
   throw new Error(lastError?.message || 'All AI models failed. Please try again later.');
 };
 
-module.exports = { generateWithAI };
+module.exports = { generateWithAI, extractJSON };

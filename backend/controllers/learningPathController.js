@@ -23,7 +23,10 @@ exports.createSyllabus = async (req, res) => {
     
     Make sure the units progress logically from beginner to advanced.
     
-    Return ONLY valid JSON (no markdown) with this structure:
+    CRITICAL: You MUST return ONLY valid JSON. No markdown, no explanatory text, no code blocks. Start your response with { and end with }.
+    The JSON must be parseable by JSON.parse() without any errors.
+    
+    Required JSON structure:
     {
       "topic": "${topic}",
       "category": "Detect appropriate category (Programming, Web Dev, DevOps, Data Science, Cloud, etc.)",
@@ -43,16 +46,24 @@ exports.createSyllabus = async (req, res) => {
     }`;
     
     console.log('Generating syllabus for:', topic);
-    const aiResponse = await generateWithAI(prompt, 'You are an expert curriculum designer and educational specialist. Create detailed, comprehensive learning paths for ANY topic. You can create paths for programming languages, frameworks, DevOps tools, cloud platforms, data science, cybersecurity, databases, and any technical or professional subject. Structure the curriculum logically from basics to advanced.');
-    
-    let syllabusData;
+    let aiResponse;
     try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
-      syllabusData = JSON.parse(cleanedResponse);
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError.message);
-      return res.status(500).json({ message: 'Failed to generate syllabus. Please try again.' });
+      aiResponse = await generateWithAI(
+        prompt,
+        'You are an expert curriculum designer. You MUST output ONLY valid JSON - no markdown, no explanations, no text before or after. Start with { and end with }. The JSON must parse without errors.',
+        true
+      );
+    } catch (aiError) {
+      console.error('AI Error:', aiError.message);
+      return res.status(500).json({ message: 'AI service temporarily unavailable. Please try again.' });
     }
+    
+    if (!aiResponse || typeof aiResponse !== 'object') {
+      console.error('Invalid AI response type:', typeof aiResponse);
+      return res.status(500).json({ message: 'Failed to generate valid syllabus. Please try again.' });
+    }
+    
+    const syllabusData = aiResponse;
     
     const learningPath = await LearningPath.create({
       userId: req.user.id,
@@ -125,7 +136,7 @@ exports.explainPhase = async (req, res) => {
     - Exercise phases: Focus on problems, solutions, practice questions
     - Project phases: Focus on building something, implementation steps
     
-    Return ONLY valid JSON:
+    Return ONLY valid JSON. No markdown, no explanations. Start with { and end with }.
     {
       "title": "${phase.title}",
       "type": "theory|practice|exercise|project",
@@ -139,13 +150,13 @@ exports.explainPhase = async (req, res) => {
     }`;
     
     console.log('Generating phase explanation:', phase.title);
-    const aiResponse = await generateWithAI(prompt, 'You are an expert teacher and technical writer. Explain topics in great detail with practical examples. Adapt your explanation style based on the phase type (theory, practice, exercise, project).');
+    const phaseContent = await generateWithAI(
+      prompt,
+      'You are an expert teacher. Output ONLY valid JSON, no markdown. Start with { and end with }.',
+      true
+    );
     
-    let phaseContent;
-    try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
-      phaseContent = JSON.parse(cleanedResponse);
-    } catch (parseError) {
+    if (!phaseContent || typeof phaseContent !== 'object') {
       return res.status(500).json({ message: 'Failed to generate explanation. Please try again.' });
     }
     
