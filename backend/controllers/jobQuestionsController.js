@@ -37,14 +37,17 @@ exports.generateQuestions = async (req, res) => {
       {"question": "...", "type": "technical/hr", "sampleAnswer": "...", "tips": ["tip1", "tip2"], "difficulty": "medium", "category": "React"}
     ]`;
 
-    const aiResponse = await generateWithAI(prompt, 'You are an expert interview coach with 10+ years of experience. Generate realistic interview questions.');
+    const aiResponse = await generateWithAI(
+      prompt,
+      'You are an expert interview coach. Generate ONLY valid JSON. No markdown.',
+      true
+    );
     
-    let questions;
-    try {
-      questions = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
-      if (!Array.isArray(questions)) questions = [];
-    } catch (parseError) {
-      return res.status(500).json({ message: 'Failed to generate questions. Please try again.' });
+    let questions = [];
+    if (Array.isArray(aiResponse)) {
+      questions = aiResponse;
+    } else if (aiResponse?.questions) {
+      questions = aiResponse.questions;
     }
 
     const jobQuestion = await JobQuestion.create({

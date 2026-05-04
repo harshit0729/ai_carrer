@@ -49,18 +49,19 @@ exports.generateAptitudeQuestions = async (req, res) => {
     ]`;
     
     console.log('Generating aptitude questions for:', topic);
-    const aiResponse = await generateWithAI(prompt, 'You are an expert aptitude teacher. Generate questions with detailed solutions and tricks.');
-    
     let questionsData;
     try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
-      questionsData = JSON.parse(cleanedResponse);
-      if (!Array.isArray(questionsData)) {
-        questionsData = [questionsData];
-      }
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError.message);
+      questionsData = await generateWithAI(
+        prompt,
+        'You are an expert aptitude teacher. Generate ONLY valid JSON. No markdown.',
+        true
+      );
+    } catch (aiError) {
       return res.status(500).json({ message: 'Failed to generate questions. Please try again.' });
+    }
+    
+    if (!Array.isArray(questionsData)) {
+      questionsData = questionsData ? [questionsData] : [];
     }
     
     const questions = await Question.insertMany(questionsData);

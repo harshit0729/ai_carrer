@@ -51,16 +51,21 @@ exports.generateNote = async (req, res) => {
     }`;
     
     console.log('Generating detailed notes for topic:', topic);
-    const aiResponse = await generateWithAI(prompt, 'You are an expert educational content creator. Generate extremely detailed, comprehensive study notes for ANY topic. Be thorough and exhaustive. You can generate notes for programming languages, frameworks, DevOps, cloud, data science, cybersecurity, databases, tools, and any technical or professional subject.');
-    console.log('AI Response for detailed notes received');
-    
     let noteData;
     try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
-      noteData = JSON.parse(cleanedResponse);
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError.message);
-      return res.status(500).json({ message: 'AI response format error. Please try again.' });
+      noteData = await generateWithAI(
+        prompt,
+        'You are an expert educational content creator. Generate ONLY valid JSON. No markdown, no explanations. Start with { and end with }.',
+        true
+      );
+    } catch (aiError) {
+      console.error('AI Error:', aiError.message);
+      return res.status(500).json({ message: 'Failed to generate notes. Please try again.' });
+    }
+    
+    if (!noteData || typeof noteData !== 'object') {
+      console.error('Invalid AI response:', noteData);
+      return res.status(500).json({ message: 'Failed to generate valid notes. Please try again.' });
     }
     
     const note = await Note.create({

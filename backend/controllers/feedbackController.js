@@ -33,8 +33,17 @@ exports.analyzePerformance = async (req, res) => {
       "studyPlan": "Brief study plan recommendation"
     }`;
     
-    const feedback = await generateWithAI(prompt, 'You are an expert educational analyst. Analyze performance and provide actionable feedback.');
-    const feedbackData = JSON.parse(feedback);
+    const feedbackData = await generateWithAI(
+      prompt,
+      'You are an expert educational analyst. Analyze performance and provide actionable feedback. Generate ONLY valid JSON.',
+      true
+    );
+    
+    if (!feedbackData || typeof feedbackData !== 'object') {
+      return res.status(500).json({ message: 'Failed to generate feedback. Please try again.' });
+    }
+    
+    res.json(feedbackData);
     
     res.json(feedbackData);
   } catch (error) {

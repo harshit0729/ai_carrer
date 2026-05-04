@@ -29,17 +29,20 @@ exports.generateRoadmap = async (req, res) => {
     }`;
     
     console.log('Calling AI for roadmap generation...');
-    const aiResponse = await generateWithAI(prompt, 'You are an expert career advisor. Return only valid JSON, no explanation.');
-    console.log('AI Response received');
-    
     let roadmapData;
     try {
-      const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
-      roadmapData = JSON.parse(cleanedResponse);
-    } catch (parseError) {
-      console.error('JSON Parse Error:', parseError.message);
-      console.error('AI Raw Response:', aiResponse);
-      return res.status(500).json({ message: 'AI response format error. Please try again.' });
+      roadmapData = await generateWithAI(
+        prompt,
+        'You are an expert career advisor. Return ONLY valid JSON. No markdown, no explanations. Start with { and end with }.',
+        true
+      );
+    } catch (aiError) {
+      console.error('AI Error:', aiError.message);
+      return res.status(500).json({ message: 'Failed to generate roadmap. Please try again.' });
+    }
+    
+    if (!roadmapData || typeof roadmapData !== 'object') {
+      return res.status(500).json({ message: 'Failed to generate valid roadmap. Please try again.' });
     }
     
     const roadmap = await Roadmap.create({

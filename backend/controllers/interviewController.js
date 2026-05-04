@@ -493,8 +493,12 @@ exports.generateInterviewContent = async (req, res) => {
       
       Return ONLY valid JSON array. Focus on ${category === 'communication' ? 'behavioral and HR questions' : category === 'technical' ? 'technical and coding questions' : category === 'body_language' ? 'non-verbal and presentation questions' : 'management and leadership questions'}.`;
 
-      const aiResponse = await generateWithAI(prompt, 'You are an interview preparation expert with 10+ years of experience.');
-      aiQuestions = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
+      const aiQuestions = await generateWithAI(
+        prompt,
+        'You are an interview preparation expert. Generate ONLY valid JSON. No markdown.',
+        true
+      );
+      
       if (!Array.isArray(aiQuestions)) aiQuestions = [];
     } catch (e) {
       console.log('AI generation failed, using static content');
@@ -555,8 +559,7 @@ exports.getCategoryQuestions = async (req, res) => {
         For each provide: question, overview, sampleAnswer, explanation, examples (array), useCases, keyPoints (array), commonMistakes (array), bestPractices (array).
         Return valid JSON array only.`;
         
-        const aiResponse = await generateWithAI(prompt, 'You are an interview expert.');
-        aiQuestions = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
+        aiQuestions = await generateWithAI(prompt, 'You are an interview expert. Generate ONLY valid JSON.', true);
         if (!Array.isArray(aiQuestions)) aiQuestions = [];
       } catch (e) {
         // Use static content if AI fails
@@ -634,8 +637,7 @@ exports.generateMoreQuestions = async (req, res) => {
     Each should have: question, overview, sampleAnswer (2-3 sentences), explanation, examples (array of 2-3), useCases, keyPoints (array), commonMistakes (array), bestPractices (array).
     Return JSON array only.`;
 
-    const aiResponse = await generateWithAI(prompt, 'You are an expert interview coach.');
-    let newQuestions = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
+    let newQuestions = await generateWithAI(prompt, 'You are an expert interview coach. Generate ONLY valid JSON.', true);
     if (!Array.isArray(newQuestions)) newQuestions = [];
 
     const existing = await InterviewCategory.findOne({ 

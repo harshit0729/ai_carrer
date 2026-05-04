@@ -23,15 +23,13 @@ exports.generateDailyWords = async (req, res) => {
       }
     ]`;
 
-    const aiResponse = await generateWithAI(prompt, 'You are an English language expert and vocabulary teacher with 15+ years of experience.');
+    const wordsData = await generateWithAI(
+      prompt,
+      'You are an English language expert. Generate ONLY valid JSON. No markdown.',
+      true
+    );
     
-    let wordsData;
-    try {
-      wordsData = JSON.parse(aiResponse.replace(/```json|```/g, '').trim());
-      if (!Array.isArray(wordsData)) wordsData = [wordsData];
-    } catch (parseError) {
-      return res.status(500).json({ message: 'Failed to generate words. Try again.' });
-    }
+    if (!Array.isArray(wordsData)) wordsData = wordsData ? [wordsData] : [];
 
     const words = await EnglishWord.insertMany(
       wordsData.map(w => ({
