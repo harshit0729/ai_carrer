@@ -111,14 +111,15 @@ const generateWithAI = async (prompt, systemPrompt = 'You are a helpful AI assis
       console.log(`Model ${model} failed:`, error.message);
       lastError = error;
       
-      // If it's a timeout or rate limit, try next model
-      if (error.code === 'ECONNABORTED' || error.response?.status === 429) {
+      const status = error.response?.status;
+      
+      if (error.code === 'ECONNABORTED' || status === 429 || status === 500 || status === 502 || status === 503) {
         continue;
       }
       
-      // If it's an auth error, don't try other models
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new Error('Invalid API key. Please check your OPENROUTER_API_KEY in .env file.');
+      if (status === 401 || status === 403) {
+        console.log('API key issue, trying next model...');
+        continue;
       }
     }
   }

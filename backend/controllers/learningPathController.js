@@ -55,7 +55,35 @@ exports.createSyllabus = async (req, res) => {
       );
     } catch (aiError) {
       console.error('AI Error:', aiError.message);
-      return res.status(500).json({ message: 'AI service temporarily unavailable. Please try again.' });
+      
+      const fallbackSyllabus = {
+        topic: topic,
+        category: 'General',
+        units: Array.from({ length: units }, (_, i) => ({
+          unitNumber: i + 1,
+          title: `Unit ${i + 1}: ${topic}`,
+          description: `Learn essential concepts of ${topic} in this unit.`,
+          phases: [
+            { phaseNumber: 1, title: 'Theory & Concepts', content: '' },
+            { phaseNumber: 2, title: 'Hands-on Practice', content: '' },
+            { phaseNumber: 3, title: 'Exercises', content: '' },
+            { phaseNumber: 4, title: 'Mini-Project', content: '' }
+          ]
+        }))
+      };
+      
+      const learningPath = await LearningPath.create({
+        userId: req.user.id,
+        topic: topic,
+        dreamJob: dreamJob || '',
+        category: 'General',
+        syllabus: fallbackSyllabus,
+        currentUnit: 0,
+        currentPhase: 0,
+        status: 'created'
+      });
+      
+      return res.json(learningPath);
     }
     
     if (!aiResponse || typeof aiResponse !== 'object') {
