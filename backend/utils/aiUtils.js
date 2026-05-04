@@ -5,28 +5,37 @@ const extractJSON = (response) => {
     return null;
   }
 
-  let cleaned = response.trim();
-  cleaned = cleaned.replace(/```json/gi, '').replace(/```/g, '').trim();
+  let cleaned = response
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
 
+  // Try direct parse first
   try {
     return JSON.parse(cleaned);
-  } catch (e) {
-    const hasArray = cleaned.includes('[') && cleaned.indexOf('[') < cleaned.indexOf('{');
-    const hasObject = cleaned.startsWith('{');
-    
-    if (hasArray || cleaned.startsWith('[')) {
-      const match = cleaned.match(/\[[\s\S]*\]/);
-      if (match) {
-        try { return JSON.parse(match[0]); } catch (e2) {}
-      }
-    }
-    if (hasObject || cleaned.startsWith('{')) {
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { return JSON.parse(match[0]); } catch (e2) {}
-      }
-    }
+  } catch (e) {}
+
+  // Find the first [ and last ] to extract array
+  const firstBrack = cleaned.indexOf('[');
+  const lastBrack = cleaned.lastIndexOf(']');
+  if (firstBrack !== -1 && lastBrack !== -1 && lastBrack > firstBrack) {
+    const arrStr = cleaned.substring(firstBrack, lastBrack + 1);
+    try {
+      return JSON.parse(arrStr);
+    } catch (e) {}
   }
+
+  // Find first { and last } to extract object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const objStr = cleaned.substring(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(objStr);
+    } catch (e) {}
+  }
+
+  console.log('extractJSON failed, cleaned:', cleaned.substring(0, 200));
   return null;
 };
 
