@@ -220,5 +220,5 @@ exports.getCodingQuestions = async (req, res) => {
 
 async function generateWithAI(prompt, systemPrompt) {
   const { generateWithAI: genAI } = require('../utils/aiUtils');
-  return await genAI(prompt, systemPrompt);
+  return await genAI(prompt, systemPrompt, true);
 }
